@@ -10,37 +10,16 @@ import pymongo_class as mongdb_class
 get_mongo = mongdb_class.MongoClass('10.82.0.1',27017,'dataunion','articles');
 artlist = get_mongo.find_mongo();
 
+#数据模型转换
 import pandas as pd
-
 docs = pd.DataFrame(artlist);
 docs['all_content'] = docs['title'] + docs['content'];
 
-
-import jieba
-import jieba.analyse
-#分词
-def sentence_to_split_word(str):
-    #jieba.load_userdict("./dict.txt") # file_name为自定义词典的路径
-    #stopwords = {}.fromkeys([ line.rstrip().decode('utf-8') for line in open('stop_word.txt').readlines() ])
-    #' '.join(set(str_to_word)-set(stopwords))
-    str_to_word = jieba.cut(str, cut_all=False);
-    
-    #str_to_word = jieba.analyse.extract_tags(str, topK=40, withWeight=False)
-    return  ' '.join(str_to_word)
-
+#结巴分词
+import td_idf_jieba as  word_weight
+getWeight = word_weight.WordWeight();
 # 增加一列，把文本进行分词
-docs['text_split_word']=docs['all_content'].apply(sentence_to_split_word)
-
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.feature_extraction.text import CountVectorizer
-
-#获取分词的tf-idf权重
-def get_tf_idf(data):
-    vectorizer = CountVectorizer()#该类会将文本中的词语转换为词频矩阵，矩阵元素a[i][j] 表示j词在i类文本下的词频
-    transformer = TfidfTransformer()#该类会统计每个词语的tf-idf权值
-    tfidf = transformer.fit_transform(vectorizer.fit_transform(data))#第一个fit_transform是计算tf-idf，第二个fit_transform是将文本转为词频矩阵
-    word = vectorizer.get_feature_names()#获取词袋模型中的所有词语
-    return tfidf,word
+docs['text_split_word']=docs['all_content'].apply(getWeight.sentence_to_split_word)
 #weight=tfidf.toarray()#将tf-idf矩阵抽取出来，元素a[i][j]表示j词在i类文本中的tf-idf权重   
 #数据库中更新abstract字段
 def dump_weigh_with_word(word,get_mongo):
@@ -51,47 +30,24 @@ def dump_weigh_with_word(word,get_mongo):
         listAbstract['value'] = weight[0];
         frameAbstract = pd.DataFrame(listAbstract); 
         frame_sort = frameAbstract.sort(['value'], ascending=0)
-        abstract = ",".join(frame_sort['word'][0:10])
+        abstract = ",".join(getWeight.delete_stop_word(frame_sort['word'][0:30],10))
         id = docs['id'][i]
         get_mongo.updata_mongo({'id':int(id)},{'abstract':abstract})
         
 corpus = docs['text_split_word']        
-(tfidf,word) = get_tf_idf(corpus)
+(tfidf,word) = getWeight.get_tf_idf(corpus)
 docs['tfidf'] = tfidf
 dump_weigh_with_word(word,get_mongo);   
 
-str_title = docs['title'][4]
-doc = docs[docs['title']==str_title]
-doc.index
 
-#获取相似文章
-from sklearn.neighbors import NearestNeighbors
-#获取训练模型
-def get_train_model(data): 
-    model = NearestNeighbors(metric='euclidean', algorithm='brute')
-    model.fit(data)
-    return model
-#获取相似文章id  
-def get_neighbors(model,tfidf,index):
-    distances, indices = model.kneighbors(tfidf[index], n_neighbors=6) # 1st
-    neighbors = pd.DataFrame({'distance':distances.flatten(), 'id':indices.flatten()}) 
-    return neighbors['id'];   
-#相似文章数据库id以逗号分隔组成字符串    
-def get_id_str(similar,docs):
-    str_id = "";
-    for j in range(1,len(similar)):
-        index = similar[j];
-        similar_id = docs.loc[index,'id'];
-        str_id = str_id + str(similar_id) + ",";
-    return str_id[0:len(str_id)-1];   
+import find_neighbors as neighbor
 #mongo数据库更新similar字段    
-def updata_similar(docs,tfidf,model,get_mongo):
+def updata_similar(docs,tfidf,get_mongo):
     for i in range(len(docs)):
-       similar_index = get_neighbors(model,tfidf,i); 
-       str_id = get_id_str(similar_index,docs);
+       similar_index = sklearn_model.get_neighbors(tfidf,i); 
+       str_id = sklearn_model.get_id_str(similar_index,docs);
        self_id = docs.loc[i,'id'];
        get_mongo.updata_mongo({'id':int(self_id)},{'similar':str_id})
-   
-model = get_train_model(tfidf)
-updata_similar(docs,tfidf,model,get_mongo)
+sklearn_model = neighbor.NeighborsClass(docs,tfidf,get_mongo);
+updata_similar(docs,tfidf,get_mongo)
 del get_mongo;
