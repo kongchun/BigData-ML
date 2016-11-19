@@ -30,14 +30,29 @@ def dump_weigh_with_word(word,get_mongo):
         listAbstract['value'] = weight[0];
         frameAbstract = pd.DataFrame(listAbstract); 
         frame_sort = frameAbstract.sort(['value'], ascending=0)
-        abstract = ",".join(getWeight.delete_stop_word(frame_sort['word'][0:30],10))
+        key_word = getWeight.delete_stop_word(frame_sort['word'][0:30],10)
+        abstract = ",".join(key_word)
         id = docs['id'][i]
         get_mongo.updata_mongo({'id':int(id)},{'abstract':abstract})
+        
+        paragraph_obj = dict();
+        html_art = docs['html'][i]
+        paragraph = html_art.split("<p>")
+        for temp in paragraph:
+            paragraph_temp = temp.split("</p>")[0]
+            paragraph_obj[paragraph_temp] = 0
+            for key_i in key_word:
+                if key_i in  paragraph_temp:
+                    paragraph_obj[paragraph_temp] += 1
+        paragraph_obj_list = sorted(paragraph_obj.iteritems(),key=lambda d:d[1],reverse=True)
+        get_mongo.updata_mongo({'id':int(id)},{'brief':paragraph_obj_list[0][0]})
+        
         
 corpus = docs['text_split_word']        
 (tfidf,word) = getWeight.get_tf_idf(corpus)
 docs['tfidf'] = tfidf
 dump_weigh_with_word(word,get_mongo);   
+
 
 
 import find_neighbors as neighbor
@@ -48,6 +63,8 @@ def updata_similar(docs,tfidf,get_mongo):
        str_id = sklearn_model.get_id_str(similar_index,docs);
        self_id = docs.loc[i,'id'];
        get_mongo.updata_mongo({'id':int(self_id)},{'similar':str_id})
-sklearn_model = neighbor.NeighborsClass(docs,tfidf,get_mongo);
+sklearn_model = neighbor.NeighborsClass(docs,tfidf);
 updata_similar(docs,tfidf,get_mongo)
+
+
 del get_mongo;
