@@ -45,7 +45,9 @@ def dump_weigh_with_word(word,get_mongo):
                 if key_i in  paragraph_temp:
                     paragraph_obj[paragraph_temp] += 1
         paragraph_obj_list = sorted(paragraph_obj.iteritems(),key=lambda d:d[1],reverse=True)
-        get_mongo.updata_mongo({'id':int(id)},{'brief':paragraph_obj_list[0][0]})
+        main_p = paragraph_obj_list[0][0]
+        new_html = html_art.replace("<p>" + main_p +"</p>", "<p style='color:red;font-weight:bold;'>" + main_p +"</p>",  1)
+        get_mongo.updata_mongo({'id':int(id)},{'brief':main_p,'html':new_html})
         
         
 corpus = docs['text_split_word']        
