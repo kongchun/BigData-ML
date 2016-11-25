@@ -46,7 +46,8 @@ def dump_weigh_with_word(word,get_mongo):
                     paragraph_obj[paragraph_temp] += 1
         paragraph_obj_list = sorted(paragraph_obj.iteritems(),key=lambda d:d[1],reverse=True)
         main_p = paragraph_obj_list[0][0]
-        new_html = html_art.replace("<p>" + main_p +"</p>", "<p style='color:red;font-weight:bold;'>" + main_p +"</p>",  1)
+        old_html = html_art.replace(" style='color:red;font-weight:bold;'", "",  1)
+        new_html = old_html.replace("<p>" + main_p +"</p>", "<p style='color:red;font-weight:bold;'>" + main_p +"</p>",  1)
         get_mongo.updata_mongo({'id':int(id)},{'brief':main_p,'html':new_html})
         
         
