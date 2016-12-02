@@ -27,6 +27,10 @@ class MongoClass:
     def updata_mongo(self,old,new):
         self.collect.update_one(old,{'$set':new})
         
+    #mongo数据库更新操作     
+    def insert_mongo(self,data):
+        self.collect.save(data)
+        
     #查询mongo数据库得到数据转换成对象数组
     def tran_mongo_array(self,data):
         list_data = [];
