@@ -18,8 +18,8 @@ class MongoClass:
           return None;
           
     #mongo数据库查询操作    
-    def find_mongo(self):
-        all_data = self.collect.find();
+    def find_mongo(self,filter):
+        all_data = self.collect.find(filter).sort('id',mongo.ASCENDING);
         re_data = self.tran_mongo_array(all_data);
         return re_data;
         
