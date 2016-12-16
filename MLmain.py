@@ -34,5 +34,8 @@ import find_neighbors as neighbor
 sklearn_model = neighbor.NeighborsClass(docs,tfidf);
 ml.updata_similar(sklearn_model, get_mongo)
 
+#关键字排序
+ml.insert_keyword()
+ml.del_mongodb();
 
 del get_mongo;
