@@ -6,10 +6,11 @@ Created on Wed Sep 21 11:14:53 2016
 """
 import pandas as pd
 import time
-import pymongo_class as mongdb_class  
+import pymongo_class as mongdb_class 
+import MLbaidu as baidu 
 class GetKeyWord:
     #初始化
-    def __init__(self, docs, word, tfidf, getWeight, mongo_name):
+    def __init__(self, docs, word, tfidf, word_freq, getWeight, mongo_name):
         self.ip = '10.82.0.1';
         self.port = 27017;
         self.table = 'bigdata';
@@ -20,25 +21,27 @@ class GetKeyWord:
         self.insert_data = dict();
         self.tfidf = tfidf;
         self.keyword = dict();
-        self.getkeyword(word, getWeight)
+        self.getkeyword(word, getWeight, word_freq)
         
     #查找关键字
-    def getkeyword(self, word, getWeight):
+    def getkeyword(self, word, getWeight, word_freq):
         docs = self.docs
-        tfidf = self.tfidf
+        baidu_search = baidu.baidu_search();
+        total_docs = baidu_search.get_totalDf();
+        baidu_word = {}
         for i in range(len(docs)):
             if docs['isNew'][i]:
-                listAbstract = dict();
-                listAbstract['word'] = word;
-                weight = tfidf[i].toarray();
-                listAbstract['value'] = weight[0];
+                listAbstract = getWeight.docs_tdidf(word, i, word_freq, self.tfidf) #获取文章的词、权重、词频矩阵
                 frameAbstract = pd.DataFrame(listAbstract); 
-                frame_sort = frameAbstract.sort(['value'], ascending=0);
+                frameAbstractSortTfidf = frameAbstract.sort(['value'], ascending=0)[0:30];
+                (frame_sort,baidu_df) = getWeight.reget_tdidf(frameAbstractSortTfidf,total_docs,baidu_search)
+                baidu_word.update(baidu_df)
                 key_word = getWeight.delete_stop_word(frame_sort['word'][0:30],10);
                 abstract = ",".join(key_word);
                 (new_html,keyword_list) = self.find_mainparagraph(i,key_word);
                 self.save_keyword(key_word)
                 self.createNewData(i, abstract, new_html, keyword_list)
+        baidu_search.write_search(baidu_word)                   
         
     #查找重点语句    
     def find_mainparagraph(self, i, key_word):

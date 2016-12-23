@@ -24,9 +24,9 @@ docs['text_split_word']=docs['all_content'].apply(getWeight.sentence_to_split_wo
 #数据库中更新abstract、重点语句字段
 import MLget_keyword
 corpus = docs['text_split_word']        
-(tfidf,word) = getWeight.get_tf_idf(corpus)
+(tfidf,word_freq,word) = getWeight.get_tf_idf(corpus)
 docs['tfidf'] = tfidf
-ml = MLget_keyword.GetKeyWord(docs, word, tfidf, getWeight, 'dataunion');   
+ml = MLget_keyword.GetKeyWord(docs, word, tfidf, word_freq, getWeight, 'dataunion');   
 
 
 import find_neighbors as neighbor
