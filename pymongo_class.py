@@ -25,7 +25,11 @@ class MongoClass:
         
     #mongo数据库更新操作     
     def updata_mongo(self,old,new):
-        self.collect.update_one(old,{'$set':new})
+        self.collect.update(old,{'$set':new}, multi=True)
+        
+    #mongo数据库批量更新操作     
+    def updataMore_mongo(self,old,new):
+        self.collect.update(old,{'$set':new}, False, True)
         
     #mongo数据库更新操作     
     def insert_mongo(self,data):

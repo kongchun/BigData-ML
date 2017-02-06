@@ -21,11 +21,11 @@ class NeighborsClass:
         neighbors = pd.DataFrame({'distance':distances.flatten(), 'id':indices.flatten()}) 
         return neighbors['id'];   
     #相似文章数据库id以逗号分隔组成字符串    
-    def get_id_str(self,similar,docs,mongo_art,mongo_name):
+    def get_id_str(self,similar,docs,mongo_art):
         str_id = "";
         for j in range(1,len(similar)):
             index = similar[j];
             similar_id = docs.loc[index,'id'];
-            str_id = str_id + str(mongo_art.find_mongo({"artid":int(similar_id), "mongoname":mongo_name})[0]['id']) + ",";
+            str_id = str_id + str(mongo_art.find_mongo({"artid":int(similar_id), "mongoname":docs.loc[index,'mongoname']})[0]['id']) + ",";
         return str_id[0:len(str_id)-1];   
     

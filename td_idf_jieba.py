@@ -57,8 +57,9 @@ class WordWeight:
             value = value_arry[0]
             if word not in alreadyContent:
                 df = search_baidu.get_df(word)
-                baidu_df[word] = df
-                search_baidu.set_df(word,df)
+                if(df > 0):
+                    baidu_df[word] = df
+                    search_baidu.set_df(word,df)
             else:
                 df = alreadyContent[word]
                             

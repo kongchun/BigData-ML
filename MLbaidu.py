@@ -15,30 +15,35 @@ class baidu_search:
     def __init__(self):
         #获取文档频数
         self.url = "http://wenku.baidu.com/";
-        self.path = "result_baidu.txt"
+        self.path = "E:/git_pro/BigData-ML/result_baidu.txt"
         self.word_dict = self.read_search();
         
     def get_df(self,word):
         findStr = word
         findStr = urllib.quote(findStr.encode('gbk', 'replace'))
         url = self.url + "search?word="+ findStr +"&org=0"
-        timeout = 20
+        timeout = 100
         socket.setdefaulttimeout(timeout)
         sleep_download_time=1
         time.sleep(sleep_download_time)
         req = urllib2.Request(url)
         res_data = urllib2.urlopen(req)
-        res = res_data.read()
-        res_data.close()
-        art = res.decode("gbk",'replace');
-        strs = u'找到相关文档约'
-        indexs = art.find(strs)
-        if(indexs<0):
-            df = 0
+        try:
+            res = res_data.read()
+        except IOError:
+            print "Error: 没有搜索成功"
+            return -1
         else:
-            count = art[indexs+7:].split(u"篇")[0]
-            df = int(count.replace(",",""))
-        return df
+            res_data.close()
+            art = res.decode("gbk",'replace');
+            strs = u'找到相关文档约'
+            indexs = art.find(strs)
+            if(indexs<0):
+                df = 0
+            else:
+                count = art[indexs+7:].split(u"篇")[0]
+                df = int(count.replace(",",""))
+            return df
     #获取总的文档数
     def get_totalDf(self):
         url_wenku = self.url

@@ -10,19 +10,27 @@ import pymongo_class as mongdb_class
 import MLbaidu as baidu 
 class GetKeyWord:
     #初始化
-    def __init__(self, docs, word, tfidf, word_freq, getWeight, mongo_name):
+    def __init__(self, docs, word, tfidf, word_freq, getWeight):
         self.ip = '10.82.0.1';
         self.port = 27017;
         self.table = 'bigdata';
         self.articles = mongdb_class.MongoClass(self.ip , self.port,self.table,'articles');
         self.word_relation = mongdb_class.MongoClass(self.ip , self.port,self.table,'word_relation');
-        self.mongo_name = mongo_name;
         self.docs = docs;
         self.insert_data = dict();
         self.tfidf = tfidf;
         self.keyword = dict();
+        #self.tempFnc();
         self.getkeyword(word, getWeight, word_freq)
         
+        '''   
+    def tempFnc(self):
+        docs = self.docs
+        for i in range(len(docs)):
+            if (docs['isNew'][i] == True):
+                name = str(docs['id'][i]) + "__" + docs['mongoname'][i];
+                self.insert_data[name] = self.articles.find_mongo({'artid':int(docs['id'][i]),'mongoname':docs['mongoname'][i]})[0]['id']
+    '''
     #查找关键字
     def getkeyword(self, word, getWeight, word_freq):
         docs = self.docs
@@ -30,7 +38,8 @@ class GetKeyWord:
         total_docs = baidu_search.get_totalDf();
         baidu_word = {}
         for i in range(len(docs)):
-            if docs['isNew'][i]:
+            if (docs['isNew'][i] == True):
+                print docs['id'][i]
                 listAbstract = getWeight.docs_tdidf(word, i, word_freq, self.tfidf) #获取文章的词、权重、词频矩阵
                 frameAbstract = pd.DataFrame(listAbstract); 
                 frameAbstractSortTfidf = frameAbstract.sort(['value'], ascending=0)[0:30];
@@ -74,23 +83,23 @@ class GetKeyWord:
         docs = self.docs
         id = docs['id'][i]
         insert_id = long(time.time()*1000);
-        self.articles.insert_mongo({"id":insert_id,"thumbnail":docs['thumbnail'][i],"content":docs['content'][i],"createDate":docs['createDate'][i],"artid":int(id),'html':new_html,'mongoname': self.mongo_name,'tags':docs['tags'][i],'abstract':abstract,'title':docs['title'][i],'url':docs['url'][i],'similar':'','hits':int(docs['hits'][i])});
-        self.insert_data[id] = insert_id;
+        self.articles.insert_mongo({"id":insert_id,"thumbnail":docs['thumbnail'][i],"content":docs['content'][i],"createDate":docs['createDate'][i],"artid":int(id),'html':new_html,'mongoname': docs['mongoname'][i],'tags':docs['tags'][i],'abstract':abstract,'title':docs['title'][i],'url':docs['url'][i],'similar':'','hits':int(0)});
+        name = str(id) + "__" + docs['mongoname'][i];
+        self.insert_data[name] = insert_id;
         self.word_relation.insert_mongo({"id":insert_id,"artid":int(id),"keyword":keyword_list})
     
     #插入相似性文章    
-    def updata_similar(self, sklearn_model, get_mongo):
+    def updata_similar(self, sklearn_model):
         docs = self.docs
         tfidf = self.tfidf
         insert_data = self.insert_data;
         for i in range(len(docs)):
             if docs['isNew'][i]:
                 similar_index = sklearn_model.get_neighbors(tfidf,i); 
-                str_id = sklearn_model.get_id_str(similar_index,docs,self.articles,self.mongo_name);
+                str_id = sklearn_model.get_id_str(similar_index,docs,self.articles);
                 self_id = docs.loc[i,'id'];
-                insert_id = insert_data[self_id]
+                insert_id = insert_data[str(self_id) + "__" + docs['mongoname'][i]]
                 self.articles.updata_mongo({'id':long(insert_id)},{'similar':str_id})
-                get_mongo.updata_mongo({"id":int(self_id)},{'isNew':False});
     #关键字排序
     def insert_keyword(self):
         keyword_log = mongdb_class.MongoClass(self.ip , self.port,self.table,'keyword_log');
