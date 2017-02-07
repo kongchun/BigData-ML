@@ -24,9 +24,15 @@ class action:
         docs['tfidf'] = tfidf;
         ml = MLget_keyword.GetKeyWord(docs, word, tfidf, word_freq, getWeight);   
         
-        #mongo数据库更新similar字段    
-        sklearn_model = neighbor.NeighborsClass(docs,tfidf);
-        ml.updata_similar(sklearn_model);
+        #mongo数据库更新similar字段
+        article = ml.get_articles();
+        article['all_content'] = article['title'] + article['content'];
+        article['text_split_word']=article['all_content'].apply(getWeight.sentence_to_split_word);
+        article_corpus = article['text_split_word']        
+        (article_tfidf,article_word_freq,article_word) = getWeight.get_tf_idf(article_corpus);
+        article['tfidf'] = article_tfidf;
+        sklearn_model = neighbor.NeighborsClass(article,article_tfidf);
+        ml.updata_similar(article,sklearn_model,article_tfidf);
         
         #关键字排序
         ml.insert_keyword();

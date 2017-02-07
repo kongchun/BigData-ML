@@ -26,9 +26,9 @@ class baidu_search:
         socket.setdefaulttimeout(timeout)
         sleep_download_time=1
         time.sleep(sleep_download_time)
-        req = urllib2.Request(url)
-        res_data = urllib2.urlopen(req)
         try:
+            req = urllib2.Request(url)
+            res_data = urllib2.urlopen(req)
             res = res_data.read()
         except IOError:
             print "Error: 没有搜索成功"

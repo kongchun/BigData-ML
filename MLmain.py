@@ -20,5 +20,5 @@ docs2['mongoname'] = 'datayuan'
 docs = docs1.append(docs2,True)
 import MLaction
 MLaction.action(docs);
-dataunion.updataMore_mongo({"isNew" : True},{"isNew" :False })
-datayuan.updataMore_mongo({"isNew" : True},{"isNew" :False })
+dataunion.updata_mongo({"isNew" : True},{"isNew" :False })
+datayuan.updata_mongo({"isNew" : True},{"isNew" :False })

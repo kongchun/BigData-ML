@@ -89,16 +89,17 @@ class GetKeyWord:
         self.word_relation.insert_mongo({"id":insert_id,"artid":int(id),"keyword":keyword_list})
     
     #插入相似性文章    
-    def updata_similar(self, sklearn_model):
-        docs = self.docs
-        tfidf = self.tfidf
-        insert_data = self.insert_data;
+    def updata_similar(self, article, sklearn_model,article_tfidf):
+        docs = article;
+        tfidf = article_tfidf
+        #insert_data = self.insert_data;
         for i in range(len(docs)):
-            if docs['isNew'][i]:
+            if docs['similar'][i] == "":
                 similar_index = sklearn_model.get_neighbors(tfidf,i); 
                 str_id = sklearn_model.get_id_str(similar_index,docs,self.articles);
-                self_id = docs.loc[i,'id'];
-                insert_id = insert_data[str(self_id) + "__" + docs['mongoname'][i]]
+                #self_id = docs.loc[i,'id'];
+                #insert_id = insert_data[str(self_id) + "__" + docs['mongoname'][i]]
+                insert_id = docs['id'][i]
                 self.articles.updata_mongo({'id':long(insert_id)},{'similar':str_id})
     #关键字排序
     def insert_keyword(self):
@@ -151,6 +152,11 @@ class GetKeyWord:
                         else:
                             word_week[k] = word_week[k] + temp_keyword[k];
         return word_week,word_month
+    
+    def get_articles(self):
+        artlist = self.articles.find_mongo({})
+        article = pd.DataFrame(artlist);
+        return article
         
     def del_mongodb(self):
         del self.articles
