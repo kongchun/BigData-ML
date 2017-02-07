@@ -8,6 +8,7 @@ import pandas as pd
 import time
 import pymongo_class as mongdb_class 
 import MLbaidu as baidu 
+import de_duplication as deduplicationClass
 class GetKeyWord:
     #初始化
     def __init__(self, docs, word, tfidf, word_freq, getWeight):
@@ -39,17 +40,22 @@ class GetKeyWord:
         baidu_word = {}
         for i in range(len(docs)):
             if (docs['isNew'][i] == True):
-                print docs['id'][i]
-                listAbstract = getWeight.docs_tdidf(word, i, word_freq, self.tfidf) #获取文章的词、权重、词频矩阵
-                frameAbstract = pd.DataFrame(listAbstract); 
-                frameAbstractSortTfidf = frameAbstract.sort(['value'], ascending=0)[0:30];
-                (frame_sort,baidu_df) = getWeight.reget_tdidf(frameAbstractSortTfidf,total_docs,baidu_search)
-                baidu_word.update(baidu_df)
-                key_word = getWeight.delete_stop_word(frame_sort['word'][0:30],10);
-                abstract = ",".join(key_word);
-                (new_html,keyword_list) = self.find_mainparagraph(i,key_word);
-                self.save_keyword(key_word)
-                self.createNewData(i, abstract, new_html, keyword_list)
+                articleDocsList=self.articles.find_mongo({})
+                articleDocs = pd.DataFrame(articleDocsList);#获取articles表中的内容
+                deduplication = deduplicationClass.deduplicationClass(docs['content'][i],articleDocs)
+         
+                if(deduplication.duplicate==False):
+                    print docs['id'][i]
+                    listAbstract = getWeight.docs_tdidf(word, i, word_freq, self.tfidf) #获取文章的词、权重、词频矩阵
+                    frameAbstract = pd.DataFrame(listAbstract); 
+                    frameAbstractSortTfidf = frameAbstract.sort(['value'], ascending=0)[0:30];
+                    (frame_sort,baidu_df) = getWeight.reget_tdidf(frameAbstractSortTfidf,total_docs,baidu_search)
+                    baidu_word.update(baidu_df)
+                    key_word = getWeight.delete_stop_word(frame_sort['word'][0:30],10);
+                    abstract = ",".join(key_word);
+                    (new_html,keyword_list) = self.find_mainparagraph(i,key_word);
+                    self.save_keyword(key_word)
+                    self.createNewData(i, abstract, new_html, keyword_list)
         baidu_search.write_search(baidu_word)                   
         
     #查找重点语句    
