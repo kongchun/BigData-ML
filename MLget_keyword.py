@@ -40,12 +40,13 @@ class GetKeyWord:
         baidu_word = {}
         for i in range(len(docs)):
             if (docs['isNew'][i] == True):
+                print docs['id'][i]
                 articleDocsList=self.articles.find_mongo({})
                 articleDocs = pd.DataFrame(articleDocsList);#获取articles表中的内容
                 deduplication = deduplicationClass.deduplicationClass(docs['content'][i],articleDocs)
          
                 if(deduplication.duplicate==False):
-                    print docs['id'][i]
+                    #print docs['id'][i]
                     listAbstract = getWeight.docs_tdidf(word, i, word_freq, self.tfidf) #获取文章的词、权重、词频矩阵
                     frameAbstract = pd.DataFrame(listAbstract); 
                     frameAbstractSortTfidf = frameAbstract.sort(['value'], ascending=0)[0:30];
@@ -53,9 +54,9 @@ class GetKeyWord:
                     baidu_word.update(baidu_df)
                     key_word = getWeight.delete_stop_word(frame_sort['word'][0:30],10);
                     abstract = ",".join(key_word);
-                    (new_html,keyword_list) = self.find_mainparagraph(i,key_word);
+                    (new_html,keyword_list,main_p) = self.find_mainparagraph(i,key_word);
                     self.save_keyword(key_word)
-                    self.createNewData(i, abstract, new_html, keyword_list)
+                    self.createNewData(i, abstract, new_html, keyword_list,main_p)
         baidu_search.write_search(baidu_word)                   
         
     #查找重点语句    
@@ -74,8 +75,8 @@ class GetKeyWord:
                     paragraph_obj[paragraph_temp] += 1
         paragraph_obj_list = sorted(paragraph_obj.iteritems(),key=lambda d:d[1],reverse=True)
         main_p = paragraph_obj_list[0][0]
-        new_html = html_art.replace("<p>" + main_p +"</p>", "<p style='background-color: #FDF6E3;'>" + main_p +"</p>",  1)
-        return new_html,keyword_list;
+        new_html = html_art.replace("<p>" + main_p +"</p>", "<p class='abstractContainer'><span class='underline'>" + main_p +"</span><span class='limaoTips'><i class='imgTips'></i><span class='wordTips'>"+ u"狸叔划重点" +"</span></span></p>",  1)
+        return new_html,keyword_list,main_p;
         
     def save_keyword(self,key_word):
         for key_i in key_word:
@@ -85,11 +86,11 @@ class GetKeyWord:
                 self.keyword[key_i] = self.keyword[key_i] + 1;
     
     #整理之后的数据插入数据库    
-    def createNewData(self, i, abstract, new_html, keyword_list):
+    def createNewData(self, i, abstract, new_html, keyword_list,main_p):
         docs = self.docs
         id = docs['id'][i]
         insert_id = long(time.time()*1000);
-        self.articles.insert_mongo({"id":insert_id,"thumbnail":docs['thumbnail'][i],"content":docs['content'][i],"createDate":docs['createDate'][i],"artid":int(id),'html':new_html,'mongoname': docs['mongoname'][i],'tags':docs['tags'][i],'abstract':abstract,'title':docs['title'][i],'url':docs['url'][i],'similar':'','hits':int(0)});
+        self.articles.insert_mongo({"id":insert_id,"keySection":main_p,"thumbnail":docs['thumbnail'][i],"content":docs['content'][i],"createDate":docs['createDate'][i],"artid":int(id),'html':new_html,'mongoname': docs['mongoname'][i],'tags':docs['tags'][i],'abstract':abstract,'title':docs['title'][i],'url':docs['url'][i],'similar':'','hits':int(0)});
         name = str(id) + "__" + docs['mongoname'][i];
         self.insert_data[name] = insert_id;
         self.word_relation.insert_mongo({"id":insert_id,"artid":int(id),"keyword":keyword_list})
