@@ -18,7 +18,6 @@ class GetKeyWord:
         self.articles = mongdb_class.MongoClass(self.ip , self.port,self.table,'articles');
         self.word_relation = mongdb_class.MongoClass(self.ip , self.port,self.table,'word_relation');
         self.docs = docs;
-        self.insert_data = dict();
         self.tfidf = tfidf;
         self.keyword = dict();
         #self.tempFnc();
@@ -39,8 +38,8 @@ class GetKeyWord:
         total_docs = baidu_search.get_totalDf();
         baidu_word = {}
         for i in range(len(docs)):
-            if (docs['isNew'][i] == True):
-                print docs['id'][i]
+            if (docs['isnew'][i] == True):
+                print (docs['id'][i])
                 articleDocsList=self.articles.find_mongo({})
                 articleDocs = pd.DataFrame(articleDocsList);#获取articles表中的内容
                 deduplication = deduplicationClass.deduplicationClass(docs['content'][i],articleDocs)
@@ -89,11 +88,8 @@ class GetKeyWord:
     def createNewData(self, i, abstract, new_html, keyword_list,main_p):
         docs = self.docs
         id = docs['id'][i]
-        insert_id = long(time.time()*1000);
-        self.articles.insert_mongo({"id":insert_id,"keySection":main_p,"thumbnail":docs['thumbnail'][i],"content":docs['content'][i],"createDate":docs['createDate'][i],"artid":int(id),'html':new_html,'mongoname': docs['mongoname'][i],'tags':docs['tags'][i],'abstract':abstract,'title':docs['title'][i],'url':docs['url'][i],'similar':'','hits':int(0)});
-        name = str(id) + "__" + docs['mongoname'][i];
-        self.insert_data[name] = insert_id;
-        self.word_relation.insert_mongo({"id":insert_id,"artid":int(id),"keyword":keyword_list})
+        self.articles.insert_mongo({"id":id,"keySection":main_p,"thumbnail":docs['thumbnail'][i],"content":docs['content'][i],"createDate":docs['createDate'][i],'html':new_html,'tags':docs['tags'][i],'abstract':abstract,'title':docs['title'][i],'url':docs['url'][i],'similar':'','hits':int(0),'source':docs['source'][i]});
+        self.word_relation.insert_mongo({"id":id,"keyword":keyword_list})
     
     #插入相似性文章    
     def updata_similar(self, article, sklearn_model,article_tfidf):
@@ -106,17 +102,17 @@ class GetKeyWord:
                 str_id = sklearn_model.get_id_str(similar_index,docs,self.articles);
                 #self_id = docs.loc[i,'id'];
                 #insert_id = insert_data[str(self_id) + "__" + docs['mongoname'][i]]
-                insert_id = docs['id'][i]
-                self.articles.updata_mongo({'id':long(insert_id)},{'similar':str_id})
+                id = docs['id'][i]
+                self.articles.updata_mongo({'id':id},{'similar':str_id})
     #关键字排序
     def insert_keyword(self):
         keyword_log = mongdb_class.MongoClass(self.ip , self.port,self.table,'keyword_log');
-        keyword_sort = mongdb_class.MongoClass(self.ip , self.port,self.table,'keyword_sort');        
+        keyword_sort = mongdb_class.MongoClass(self.ip , self.port,self.table,'keyword_sort'); 
         insert_id = long(time.time()*1000);
-        keyword_log.insert_mongo({"id":insert_id,"keyword":self.keyword});
+        keyword_log.insert_mongo({"id":insert_id ,"keyword":self.keyword});
         keword_data = keyword_log.find_mongo({});
         (arry_week,arry_month) = self.sort_keyword(keword_data)
-        keyword_sort.insert_mongo({"id":insert_id,"week":arry_week,"month":arry_month})
+        keyword_sort.insert_mongo({'id':insert_id ,"week":arry_week,"month":arry_month})
         del keyword_log;
         del keyword_sort;
    
